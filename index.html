@@ -297,11 +297,15 @@
     }
 
     fontSelect.addEventListener("change", () => {
-      editor.style.fontFamily = fontSelect.value;
+      const font = fontSelect.value;
+      editor.style.fontFamily = font;
+      localStorage.setItem("selectedFont", font);
     });
 
     fontSizeSelect.addEventListener("change", () => {
-      editor.style.fontSize = fontSizeSelect.value;
+      const size = fontSizeSelect.value;
+      editor.style.fontSize = size;
+      localStorage.setItem("selectedFontSize", size);
     });
 
     editor.addEventListener("input", () => {
@@ -312,7 +316,19 @@
 
     window.onload = () => {
       const saved = localStorage.getItem("richNote");
+      const savedFont = localStorage.getItem("selectedFont");
+      const savedFontSize = localStorage.getItem("selectedFontSize");
+
       if (saved) editor.innerHTML = saved;
+      if (savedFont) {
+        editor.style.fontFamily = savedFont;
+        fontSelect.value = savedFont;
+      }
+      if (savedFontSize) {
+        editor.style.fontSize = savedFontSize;
+        fontSizeSelect.value = savedFontSize;
+      }
+
       updateCounter();
       showQuote();
       showDateTime();
