@@ -348,7 +348,7 @@
       updateCounter();
       showQuote();
       showDateTime();
-      setInterval(showDateTime, 60000); // update clock every 60s
+      setInterval(showDateTime, 1000); // update clock every 60s
 
       const savedMode = localStorage.getItem("darkMode");
       if (savedMode === "enabled") {
