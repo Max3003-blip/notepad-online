@@ -131,7 +131,6 @@
       opacity: 1;
     }
 
-    /* Dark Mode */
     body.dark {
       background: #1e1e1e;
       color: #ffffff;
@@ -349,6 +348,7 @@
       updateCounter();
       showQuote();
       showDateTime();
+      setInterval(showDateTime, 60000); // update clock every 60s
 
       const savedMode = localStorage.getItem("darkMode");
       if (savedMode === "enabled") {
