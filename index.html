@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Online Notepad</title>
-  <meta name="description" content="Simple, fast online notepad that autosaves, tracks word count, and supports dark mode. No login, no hassle. Just write.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fancy Online Notepad</title>
+  <meta name="description" content="Feature-rich online notepad with autosave, dark mode, formatting options, and word counter. Built by Max.">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -51,34 +51,35 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       color: #333;
       font-size: 2rem;
     }
 
-    textarea {
-      width: 100%;
-      height: 600px;
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+      justify-content: center;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .editor {
+      min-height: 400px;
       padding: 20px;
-      font-size: 18px;
       border: 2px solid #ccc;
       border-radius: 12px;
-      resize: vertical;
-      box-sizing: border-box;
+      font-size: 16px;
       outline: none;
-      transition: border 0.2s;
-    }
-
-    textarea:focus {
-      border: 2px solid #007bff;
-      background-color: #f9fcff;
-    }
-
-    #counter {
-      text-align: center;
-      margin-top: 15px;
-      font-size: 14px;
-      color: #555;
+      overflow-y: auto;
     }
 
     .buttons {
@@ -89,26 +90,31 @@
       margin-top: 25px;
     }
 
-    button {
-      padding: 14px 28px;
-      font-size: 16px;
-      cursor: pointer;
-      border: none;
-      border-radius: 10px;
+    .buttons button {
       background-color: #007bff;
       color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
       transition: background-color 0.2s;
     }
 
-    button:hover {
+    .buttons button:hover {
       background-color: #0056b3;
+    }
+
+    #counter {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 14px;
+      color: #555;
     }
 
     .saved {
       text-align: center;
       font-size: 14px;
       color: gray;
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
     .saved-msg {
@@ -127,7 +133,7 @@
       margin-top: 30px;
     }
 
-    /* Dark mode styles */
+    /* Dark Mode */
     body.dark {
       background: #1e1e1e;
       color: #ffffff;
@@ -138,15 +144,10 @@
       border-color: #00bfff;
     }
 
-    body.dark textarea {
+    body.dark .editor {
       background: #1e1e1e;
-      color: #fff;
+      color: #ffffff;
       border-color: #444;
-    }
-
-    body.dark textarea:focus {
-      background: #2a2a2a;
-      border-color: #00bfff;
     }
 
     body.dark .top-bar {
@@ -169,14 +170,38 @@
   </div>
 
   <div class="container">
-    <h1>Online Notepad</h1>
-    <textarea id="notepad" placeholder="Start typing..."></textarea>
+    <h1>Fancy Online Notepad</h1>
+
+    <div class="toolbar">
+      <select id="fontSelect">
+        <option value="Arial">Arial</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Verdana">Verdana</option>
+      </select>
+      <select id="fontSizeSelect">
+        <option value="14px">Small</option>
+        <option value="18px" selected>Medium</option>
+        <option value="22px">Large</option>
+        <option value="28px">Extra Large</option>
+      </select>
+      <button onclick="formatText('underline')">Underline</button>
+      <button onclick="formatText('insertUnorderedList')">Bullet List</button>
+      <button onclick="document.execCommand('undo')">Undo</button>
+      <button onclick="document.execCommand('redo')">Redo</button>
+    </div>
+
+    <div id="editor" class="editor" contenteditable="true" spellcheck="true"></div>
+
     <p id="counter">Words: 0 | Characters: 0</p>
+
     <div class="buttons">
       <button onclick="copyText()">Copy</button>
       <button onclick="clearText()">Clear</button>
       <button onclick="downloadText()">Download</button>
     </div>
+
     <p class="saved">Autosaved to your browser</p>
     <p id="autosaveStatus" class="saved-msg">Saved!</p>
   </div>
@@ -186,12 +211,14 @@
   </footer>
 
   <script>
-    const notepad = document.getElementById("notepad");
+    const editor = document.getElementById("editor");
     const counter = document.getElementById("counter");
     const datetime = document.getElementById("datetime");
     const quote = document.getElementById("quote");
     const autosaveStatus = document.getElementById("autosaveStatus");
     const darkToggle = document.getElementById("darkToggle");
+    const fontSelect = document.getElementById("fontSelect");
+    const fontSizeSelect = document.getElementById("fontSizeSelect");
 
     const quotes = [
       "Believe in yourself and all that you are.",
@@ -230,7 +257,7 @@
     }
 
     function updateCounter() {
-      const text = notepad.value.trim();
+      const text = editor.innerText.trim();
       const wordCount = text === "" ? 0 : text.split(/\s+/).length;
       const charCount = text.length;
       counter.textContent = `Words: ${wordCount} | Characters: ${charCount}`;
@@ -248,31 +275,54 @@
     }
 
     function copyText() {
-      notepad.select();
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
       document.execCommand("copy");
       alert("Copied to clipboard!");
     }
 
     function clearText() {
-      if (confirm("Are you sure you want to clear the note?")) {
-        notepad.value = "";
-        localStorage.removeItem("savedNote");
+      if (confirm("Are you sure you want to clear your note?")) {
+        editor.innerHTML = "";
+        localStorage.removeItem("richNote");
         updateCounter();
         showSavedStatus();
       }
     }
 
     function downloadText() {
-      const blob = new Blob([notepad.value], { type: "text/plain" });
+      const text = editor.innerText;
+      const blob = new Blob([text], { type: "text/plain" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = "note.txt";
       link.click();
     }
 
+    function formatText(command) {
+      document.execCommand(command);
+    }
+
+    fontSelect.addEventListener("change", () => {
+      editor.style.fontFamily = fontSelect.value;
+    });
+
+    fontSizeSelect.addEventListener("change", () => {
+      editor.style.fontSize = fontSizeSelect.value;
+    });
+
+    editor.addEventListener("input", () => {
+      localStorage.setItem("richNote", editor.innerHTML);
+      updateCounter();
+      showSavedStatus();
+    });
+
     window.onload = () => {
-      const saved = localStorage.getItem("savedNote");
-      if (saved) notepad.value = saved;
+      const saved = localStorage.getItem("richNote");
+      if (saved) editor.innerHTML = saved;
       updateCounter();
       showQuote();
       showDateTime();
@@ -283,12 +333,6 @@
         darkToggle.checked = true;
       }
     };
-
-    notepad.addEventListener("input", () => {
-      localStorage.setItem("savedNote", notepad.value);
-      updateCounter();
-      showSavedStatus();
-    });
 
     darkToggle.addEventListener("change", () => {
       document.body.classList.toggle("dark");
