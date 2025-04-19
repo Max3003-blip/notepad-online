@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>📝 Notepad</title>
-  <meta name="description" content="Feature-rich online notepad with autosave, dark mode, formatting options, and word counter.">
+  <meta name="description" content="Online notepad with folders, autosave history, dark mode, formatting, and PDF export.">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -22,7 +22,6 @@
       background-color: #007bff;
       color: white;
       font-size: 14px;
-      min-height: 40px;
       position: relative;
     }
 
@@ -43,20 +42,18 @@
       max-width: 90vw;
       margin: 20px auto;
       background: #ffffff;
-      padding: 40px;
-      border-radius: 20px;
+      padding: 30px;
+      border-radius: 16px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       border: 3px solid #007bff;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 20px;
       color: #333;
-      font-size: 2rem;
     }
 
-    .toolbar {
+    .toolbar, .folder-controls {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -64,11 +61,11 @@
       justify-content: center;
     }
 
-    select, button {
+    select, button, input[type="text"] {
       padding: 8px 12px;
       font-size: 14px;
       border: 1px solid #ccc;
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
     }
 
@@ -87,15 +84,15 @@
       justify-content: center;
       flex-wrap: wrap;
       gap: 15px;
-      margin-top: 25px;
+      margin-top: 20px;
     }
 
     .buttons button {
       background-color: #007bff;
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
+      padding: 10px 20px;
+      border-radius: 6px;
       transition: background-color 0.2s;
     }
 
@@ -108,13 +105,6 @@
       margin-top: 15px;
       font-size: 14px;
       color: #555;
-    }
-
-    .saved {
-      text-align: center;
-      font-size: 14px;
-      color: gray;
-      margin-top: 10px;
     }
 
     .saved-msg {
@@ -131,9 +121,27 @@
       opacity: 1;
     }
 
+    .history-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      display: none;
+      background: #f9f9f9;
+    }
+
+    .history-list div {
+      margin-bottom: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #007bff;
+    }
+
     body.dark {
       background: #1e1e1e;
-      color: #ffffff;
+      color: white;
     }
 
     body.dark .container {
@@ -143,225 +151,318 @@
 
     body.dark .editor {
       background: #1e1e1e;
-      color: #ffffff;
+      color: white;
       border-color: #444;
     }
 
     body.dark .top-bar {
       background-color: #00bfff;
     }
+
+    body.dark .history-list {
+      background: #333;
+      color: white;
+    }
   </style>
 </head>
 <body>
 
-  <div class="top-bar">
-    <div id="quote">Loading quote...</div>
-    <div id="datetime">--:--</div>
+<div class="top-bar">
+  <div id="quote">Loading quote...</div>
+  <div id="datetime">--:--</div>
+</div>
+
+<div style="text-align: right; margin: 10px 30px;">
+  <label><input type="checkbox" id="darkToggle" /> Dark Mode</label>
+</div>
+
+<div class="container">
+  <h1>📝 Notepad</h1>
+
+  <div class="folder-controls">
+    <select id="folderSelect"></select>
+    <input type="text" id="newFolderName" placeholder="New folder name"/>
+    <button onclick="createFolder()">➕ Create</button>
+    <button onclick="deleteFolder()">🗑️ Delete</button>
+    <button onclick="showHistory()">🕓 View History</button>
   </div>
 
-  <div style="text-align: right; margin: 10px 30px;">
-    <label style="font-size: 14px;">
-      <input type="checkbox" id="darkToggle" />
-      Dark Mode
-    </label>
+  <div class="toolbar">
+    <select id="fontSelect">
+      <option value="Arial">Arial</option>
+      <option value="Courier New">Courier New</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Times New Roman">Times New Roman</option>
+      <option value="Verdana">Verdana</option>
+    </select>
+    <select id="fontSizeSelect">
+      <option value="14px">Small</option>
+      <option value="18px" selected>Medium</option>
+      <option value="22px">Large</option>
+      <option value="28px">Extra Large</option>
+    </select>
+    <button onclick="formatText('underline')">Underline</button>
+    <button onclick="formatText('insertUnorderedList')">Bullets</button>
+    <button onclick="document.execCommand('undo')">Undo</button>
+    <button onclick="document.execCommand('redo')">Redo</button>
+    <button onclick="setAlignment('left')">Align Left</button>
+    <button onclick="setAlignment('center')">Align Center</button>
+    <button onclick="setAlignment('right')">Align Right</button>
   </div>
 
-  <div class="container">
-    <h1>📝 Notepad</h1>
+  <div id="editor" class="editor" contenteditable="true" spellcheck="true"></div>
 
-    <div class="toolbar">
-      <select id="fontSelect">
-        <option value="Arial">Arial</option>
-        <option value="Courier New">Courier New</option>
-        <option value="Georgia">Georgia</option>
-        <option value="Times New Roman">Times New Roman</option>
-        <option value="Verdana">Verdana</option>
-      </select>
-      <select id="fontSizeSelect">
-        <option value="14px">Small</option>
-        <option value="18px" selected>Medium</option>
-        <option value="22px">Large</option>
-        <option value="28px">Extra Large</option>
-      </select>
-      <button onclick="formatText('underline')">Underline</button>
-      <button onclick="formatText('insertUnorderedList')">Bullet List</button>
-      <button onclick="document.execCommand('undo')">Undo</button>
-      <button onclick="document.execCommand('redo')">Redo</button>
-      <button onclick="setAlignment('left')">Align Left</button>
-      <button onclick="setAlignment('center')">Align Center</button>
-      <button onclick="setAlignment('right')">Align Right</button>
-    </div>
+  <p id="counter">Words: 0 | Characters: 0</p>
 
-    <div id="editor" class="editor" contenteditable="true" spellcheck="true"></div>
-
-    <p id="counter">Words: 0 | Characters: 0</p>
-
-    <div class="buttons">
-      <button onclick="copyText()">Copy</button>
-      <button onclick="clearText()">Clear</button>
-      <button onclick="downloadText()">Download</button>
-      <button onclick="downloadPDF()">Save as PDF</button>
-    </div>
-
-    <p class="saved">Autosaved to your browser</p>
-    <p id="autosaveStatus" class="saved-msg"><span>✅ Saved!</span></p>
+  <div class="buttons">
+    <button onclick="copyText()">Copy</button>
+    <button onclick="clearText()">Clear</button>
+    <button onclick="downloadText()">Download</button>
+    <button onclick="downloadPDF()">Save as PDF</button>
   </div>
+
+  <p id="autosaveStatus" class="saved-msg">✅ Saved!</p>
+  <div id="historyList" class="history-list"></div>
+</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script>
-    const editor = document.getElementById("editor");
-    const counter = document.getElementById("counter");
-    const datetime = document.getElementById("datetime");
-    const quote = document.getElementById("quote");
-    const autosaveStatus = document.getElementById("autosaveStatus");
-    const darkToggle = document.getElementById("darkToggle");
-    const fontSelect = document.getElementById("fontSelect");
-    const fontSizeSelect = document.getElementById("fontSizeSelect");
+<script>
+const editor = document.getElementById("editor");
+const folderSelect = document.getElementById("folderSelect");
+const newFolderName = document.getElementById("newFolderName");
+const historyList = document.getElementById("historyList");
+const autosaveStatus = document.getElementById("autosaveStatus");
+const fontSelect = document.getElementById("fontSelect");
+const fontSizeSelect = document.getElementById("fontSizeSelect");
+const darkToggle = document.getElementById("darkToggle");
+const datetime = document.getElementById("datetime");
+const quote = document.getElementById("quote");
+const counter = document.getElementById("counter");
 
-    const quotes = [
-      "Believe in yourself and all that you are.",
-      "Start where you are. Use what you have. Do what you can.",
-      "Push yourself, because no one else is going to do it for you.",
-      "You’re capable of amazing things.",
-      "Success doesn't come from what you do occasionally, it comes from what you do consistently.",
-      "Work hard in silence. Let your success make the noise.",
-      "Don’t watch the clock; do what it does. Keep going."
-    ];
+let currentFolder = "My Notes";
+let autosaveTimer = null;
 
-    function animateQuote(text) {
-      quote.textContent = "";
-      let i = 0;
-      const typing = setInterval(() => {
-        if (i < text.length) {
-          quote.textContent += text.charAt(i);
-          i++;
-        } else {
-          clearInterval(typing);
-        }
-      }, 40);
+const quotes = [
+  "Believe in yourself and all that you are.",
+  "Start where you are. Use what you have. Do what you can.",
+  "Push yourself, because no one else is going to do it for you.",
+  "You’re capable of amazing things.",
+  "Work hard in silence. Let your success make the noise.",
+  "Don’t watch the clock; do what it does. Keep going."
+];
+
+function updateFoldersUI() {
+  folderSelect.innerHTML = "";
+  const folders = JSON.parse(localStorage.getItem("folders") || "[]");
+  folders.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    if (name === currentFolder) option.selected = true;
+    folderSelect.appendChild(option);
+  });
+}
+
+function createFolder() {
+  const name = newFolderName.value.trim();
+  if (!name || name === currentFolder) return;
+  const folders = JSON.parse(localStorage.getItem("folders") || "[]");
+  if (!folders.includes(name)) {
+    folders.push(name);
+    localStorage.setItem("folders", JSON.stringify(folders));
+    localStorage.setItem(`note_${name}`, "");
+    localStorage.setItem(`history_${name}`, "[]");
+    currentFolder = name;
+    loadNote();
+    updateFoldersUI();
+    newFolderName.value = "";
+  }
+}
+
+function deleteFolder() {
+  if (confirm(`Delete folder "${currentFolder}"? This cannot be undone.`)) {
+    const folders = JSON.parse(localStorage.getItem("folders") || "[]").filter(f => f !== currentFolder);
+    localStorage.setItem("folders", JSON.stringify(folders));
+    localStorage.removeItem(`note_${currentFolder}`);
+    localStorage.removeItem(`history_${currentFolder}`);
+    currentFolder = folders[0] || "My Notes";
+    if (!folders.includes("My Notes")) {
+      folders.push("My Notes");
+      localStorage.setItem("folders", JSON.stringify(folders));
     }
+    loadNote();
+    updateFoldersUI();
+  }
+}
 
-    function showQuote() {
-      const random = Math.floor(Math.random() * quotes.length);
-      animateQuote(quotes[random]);
-    }
+function switchFolder() {
+  currentFolder = folderSelect.value;
+  loadNote();
+}
 
-    function showDateTime() {
-      const now = new Date();
-      const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-      const formatted = now.toLocaleDateString(undefined, options);
-      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      datetime.textContent = `${formatted} — ${time}`;
-    }
+function loadNote() {
+  const saved = localStorage.getItem(`note_${currentFolder}`);
+  editor.innerHTML = saved || "";
+  updateCounter();
+  historyList.style.display = "none";
+}
 
-    function updateCounter() {
-      const text = editor.innerText.trim();
-      const wordCount = text === "" ? 0 : text.split(/\s+/).length;
-      const charCount = text.length;
-      counter.textContent = `Words: ${wordCount} | Characters: ${charCount}`;
-    }
+function saveNote() {
+  localStorage.setItem(`note_${currentFolder}`, editor.innerHTML);
+  updateCounter();
+  showSavedStatus();
+}
 
-    function showSavedStatus() {
-      autosaveStatus.classList.add("visible");
-      setTimeout(() => {
-        autosaveStatus.classList.remove("visible");
-      }, 1000);
-    }
+function showSavedStatus() {
+  autosaveStatus.classList.add("visible");
+  setTimeout(() => autosaveStatus.classList.remove("visible"), 1000);
+}
 
-    function copyText() {
-      const range = document.createRange();
-      range.selectNodeContents(editor);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      document.execCommand("copy");
-      alert("Copied to clipboard!");
-    }
+function saveHistorySnapshot() {
+  const content = editor.innerHTML;
+  const time = new Date().toLocaleString();
+  const key = `history_${currentFolder}`;
+  const history = JSON.parse(localStorage.getItem(key) || "[]");
+  history.unshift({ content, time });
+  if (history.length > 50) history.pop(); // limit to 50 versions
+  localStorage.setItem(key, JSON.stringify(history));
+}
 
-    function clearText() {
-      if (confirm("Are you sure you want to clear your note?")) {
-        editor.innerHTML = "";
-        localStorage.removeItem("richNote");
-        updateCounter();
-        showSavedStatus();
-      }
-    }
-
-    function downloadText() {
-      const text = editor.innerText;
-      const blob = new Blob([text], { type: "text/plain" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "note.txt";
-      link.click();
-    }
-
-    async function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const lines = doc.splitTextToSize(editor.innerText, 180);
-      doc.text(lines, 10, 20);
-      doc.save("note.pdf");
-    }
-
-    function formatText(command) {
-      document.execCommand(command);
-    }
-
-    function setAlignment(align) {
-      document.execCommand("justify" + align);
-    }
-
-    fontSelect.addEventListener("change", () => {
-      const font = fontSelect.value;
-      editor.style.fontFamily = font;
-      localStorage.setItem("selectedFont", font);
-    });
-
-    fontSizeSelect.addEventListener("change", () => {
-      const size = fontSizeSelect.value;
-      editor.style.fontSize = size;
-      localStorage.setItem("selectedFontSize", size);
-    });
-
-    editor.addEventListener("input", () => {
-      localStorage.setItem("richNote", editor.innerHTML);
-      updateCounter();
-      showSavedStatus();
-    });
-
-    window.onload = () => {
-      const saved = localStorage.getItem("richNote");
-      const savedFont = localStorage.getItem("selectedFont");
-      const savedFontSize = localStorage.getItem("selectedFontSize");
-
-      if (saved) editor.innerHTML = saved;
-      if (savedFont) {
-        editor.style.fontFamily = savedFont;
-        fontSelect.value = savedFont;
-      }
-      if (savedFontSize) {
-        editor.style.fontSize = savedFontSize;
-        fontSizeSelect.value = savedFontSize;
-      }
-
-      updateCounter();
-      showQuote();
-      showDateTime();
-      setInterval(showDateTime, 1000); // update every second
-
-      const savedMode = localStorage.getItem("darkMode");
-      if (savedMode === "enabled") {
-        document.body.classList.add("dark");
-        darkToggle.checked = true;
+function showHistory() {
+  const key = `history_${currentFolder}`;
+  const history = JSON.parse(localStorage.getItem(key) || "[]");
+  historyList.innerHTML = "";
+  history.forEach((entry, i) => {
+    const div = document.createElement("div");
+    div.textContent = `${entry.time}`;
+    div.onclick = () => {
+      if (confirm("Restore this version?")) {
+        editor.innerHTML = entry.content;
+        saveNote();
       }
     };
+    historyList.appendChild(div);
+  });
+  historyList.style.display = "block";
+}
 
-    darkToggle.addEventListener("change", () => {
-      document.body.classList.toggle("dark");
-      localStorage.setItem("darkMode", document.body.classList.contains("dark") ? "enabled" : "disabled");
-    });
-  </script>
+function animateQuote(text) {
+  quote.textContent = "";
+  let i = 0;
+  const typing = setInterval(() => {
+    if (i < text.length) {
+      quote.textContent += text.charAt(i);
+      i++;
+    } else {
+      clearInterval(typing);
+    }
+  }, 40);
+}
 
+function showQuote() {
+  const random = Math.floor(Math.random() * quotes.length);
+  animateQuote(quotes[random]);
+}
+
+function showDateTime() {
+  const now = new Date();
+  const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+  const formatted = now.toLocaleDateString(undefined, options);
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  datetime.textContent = `${formatted} — ${time}`;
+}
+
+function updateCounter() {
+  const text = editor.innerText.trim();
+  const wordCount = text === "" ? 0 : text.split(/\s+/).length;
+  const charCount = text.length;
+  counter.textContent = `Words: ${wordCount} | Characters: ${charCount}`;
+}
+
+function formatText(command) {
+  document.execCommand(command);
+}
+
+function setAlignment(align) {
+  document.execCommand("justify" + align);
+}
+
+function copyText() {
+  const range = document.createRange();
+  range.selectNodeContents(editor);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  document.execCommand("copy");
+  alert("Copied to clipboard!");
+}
+
+function clearText() {
+  if (confirm("Clear all text?")) {
+    editor.innerHTML = "";
+    saveNote();
+  }
+}
+
+function downloadText() {
+  const text = editor.innerText;
+  const blob = new Blob([text], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${currentFolder}.txt`;
+  link.click();
+}
+
+async function downloadPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const lines = doc.splitTextToSize(editor.innerText, 180);
+  doc.text(lines, 10, 20);
+  doc.save(`${currentFolder}.pdf`);
+}
+
+// Autosave every second
+editor.addEventListener("input", () => {
+  saveNote();
+});
+
+// Snapshots every 30s
+setInterval(saveHistorySnapshot, 30000);
+setInterval(showDateTime, 1000);
+
+// Init
+window.onload = () => {
+  const folders = JSON.parse(localStorage.getItem("folders") || "[]");
+  if (!folders.includes("My Notes")) {
+    folders.push("My Notes");
+    localStorage.setItem("folders", JSON.stringify(folders));
+  }
+  updateFoldersUI();
+  showQuote();
+  showDateTime();
+  const savedMode = localStorage.getItem("darkMode");
+  if (savedMode === "enabled") {
+    document.body.classList.add("dark");
+    darkToggle.checked = true;
+  }
+  loadNote();
+};
+
+// UI listeners
+folderSelect.addEventListener("change", switchFolder);
+fontSelect.addEventListener("change", () => {
+  editor.style.fontFamily = fontSelect.value;
+  localStorage.setItem("selectedFont", fontSelect.value);
+});
+fontSizeSelect.addEventListener("change", () => {
+  editor.style.fontSize = fontSizeSelect.value;
+  localStorage.setItem("selectedFontSize", fontSizeSelect.value);
+});
+darkToggle.addEventListener("change", () => {
+  document.body.classList.toggle("dark");
+  localStorage.setItem("darkMode", document.body.classList.contains("dark") ? "enabled" : "disabled");
+});
+</script>
 </body>
 </html>
+
