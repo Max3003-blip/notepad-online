@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fancy Online Notepad</title>
-  <meta name="description" content="Feature-rich online notepad with autosave, dark mode, formatting options, and word counter. Built by Max.">
+  <meta name="description" content="Feature-rich online notepad with autosave, dark mode, formatting options, and word counter.">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -121,16 +121,14 @@
       text-align: center;
       color: green;
       font-size: 13px;
-      display: none;
+      min-height: 20px;
+      opacity: 0;
       margin-top: 5px;
-      transition: opacity 0.3s;
+      transition: opacity 0.3s ease-in-out;
     }
 
-    footer {
-      text-align: center;
-      font-size: 13px;
-      color: gray;
-      margin-top: 30px;
+    .saved-msg.visible {
+      opacity: 1;
     }
 
     /* Dark Mode */
@@ -203,12 +201,8 @@
     </div>
 
     <p class="saved">Autosaved to your browser</p>
-    <p id="autosaveStatus" class="saved-msg">Saved!</p>
+    <p id="autosaveStatus" class="saved-msg"><span>✅ Saved!</span></p>
   </div>
-
-  <footer>
-    Built by Max
-  </footer>
 
   <script>
     const editor = document.getElementById("editor");
@@ -264,13 +258,9 @@
     }
 
     function showSavedStatus() {
-      autosaveStatus.style.display = "block";
-      autosaveStatus.style.opacity = 1;
+      autosaveStatus.classList.add("visible");
       setTimeout(() => {
-        autosaveStatus.style.opacity = 0;
-        setTimeout(() => {
-          autosaveStatus.style.display = "none";
-        }, 300);
+        autosaveStatus.classList.remove("visible");
       }, 1000);
     }
 
