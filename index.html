@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Online Notepad</title>
+  <meta name="description" content="Simple, fast online notepad that autosaves, tracks word count, and supports dark mode. No login, no hassle. Just write.">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -119,6 +120,13 @@
       transition: opacity 0.3s;
     }
 
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: gray;
+      margin-top: 30px;
+    }
+
     /* Dark mode styles */
     body.dark {
       background: #1e1e1e;
@@ -172,6 +180,10 @@
     <p class="saved">Autosaved to your browser</p>
     <p id="autosaveStatus" class="saved-msg">Saved!</p>
   </div>
+
+  <footer>
+    Built by Max
+  </footer>
 
   <script>
     const notepad = document.getElementById("notepad");
